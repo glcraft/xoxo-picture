@@ -1,4 +1,5 @@
 pub mod color_item;
+pub mod trees;
 
 use image;
 use image::GenericImageView;
