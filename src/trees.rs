@@ -29,7 +29,10 @@ impl<T> TreeItem<T> for &[T;3] {
         &self[id]
     }
 }
-
+enum PartitionTree<T> {
+    Partition(Box<PartitionTree<T>>, Box<PartitionTree<T>>),
+    Value(T, T)
+}
 pub enum Octree {
     Branch([Box<Octree>;pow_2(3)]),
     Leaf(Option<[f32;3]>)
@@ -44,21 +47,30 @@ impl Octree {
     }
     fn dispatch(ls_num:&mut [[f32;3]]) -> [Box<Octree>;pow_2(3)] {
         let mut tree: [Box<Octree>;pow_2(3)];
-        // Self::partition(ls_num)
+        let parts = Self::partition(ls_num,0);
         
     }
-    fn partition(ls_num:&mut [[f32;3]], i:usize) -> (&mut[[f32;3]], &mut[[f32;3]]) {
+    fn partition(ls_num:&mut [[f32;3]], i:usize) -> PartitionTree<&mut[[f32;3]]> {
         let mut min=f32::MAX;
         let mut max=f32::MIN;
         for num in ls_num {
-            min = min.min(num[0]);
-            max = max.max(num[0]);
+            min = min.min(num[i]);
+            max = max.max(num[i]);
         }
         let pivot = (min+max)/2.0;
-        let first = ls_num.iter_mut();
-        for val in ls_num.iter_mut() {
-
+        let mut first = 0;
+        let mut val = ls_num.iter_mut();
+        val.next();
+        while let Some(val) = val.next() {
+            std::mem::swap(val, &mut ls_num[first]);
+            first+=1;
         }
-        (ls_num, ls_num)
+        let v=(&mut ls_num[0..first], &mut ls_num[first+1..0]);
+        if i!=3-1 {
+            PartitionTree::Partition(Box::new(Self::partition(v.0,i+1)), Box::new(Self::partition(v.1,i+1)))
+        }
+        else {
+            PartitionTree::Value(v.0,v.1)
+        }
     }
 }
