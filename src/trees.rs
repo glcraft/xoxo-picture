@@ -17,11 +17,14 @@ pub trait TreeItem<T> {
 }
 
 
+
 const fn pow_2(i: usize) -> usize{
     if i>1 {
         2*pow_2(i-1)
-    } else {
+    } else if i==1 {
         2
+    } else {
+        1
     }
 }
 
@@ -59,7 +62,7 @@ impl Octree {
     fn get_pivot(ls_num:&[[f32;3]]) -> [f32;3] {
         let mut min: [f32;3]=[f32::MAX;3];
         let mut max: [f32;3]=[f32::MIN;3];
-        for num in ls_num {
+        for num in ls_num.into_iter() {
             for idim in 0..3 {
                 min[idim] = min[idim].min(num[idim]);
                 max[idim] = max[idim].max(num[idim]);
