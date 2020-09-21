@@ -9,6 +9,8 @@
 
 // make_tree!(Octree, 3);
 // make_tree!(Quadtree, 2);
+use std::collections::LinkedList;
+use array_init::array_init;
 
 pub trait TreeItem<T> {
     fn get_item(&self, id: usize) -> &T;
@@ -35,22 +37,26 @@ enum PartitionTree<T> {
 }
 pub enum Octree {
     Branch([Box<Octree>;pow_2(3)], [f32;3]),
-    Leaf(Option<[f32;3]>)
+    Leaf([f32;3]),
+    Empty
 }
 impl Octree {
     fn generate(ls_num:&mut [[f32;3]]) -> Octree {
         match ls_num.len() {
-            0 => Octree::Leaf(None),
-            1 => Octree::Leaf(Some(ls_num[0])),
-            _ => Octree::Branch(Self::dispatch(ls_num))
+            0 => Octree::Empty,
+            1 => Octree::Leaf(ls_num[0]),
+            _ => Self::dispatch(ls_num)
         }
     }
-    fn dispatch(ls_num:&mut [[f32;3]]) -> [Box<Octree>;pow_2(3)] {
-        let mut tree: [Box<Octree>;pow_2(3)];
-        let parts = Self::partition(ls_num,0);
+    fn dispatch(ls_num:&mut [[f32;3]]) -> Octree {
         
+        let pivot = Self::get_pivot(ls_num);
+        let mut parts = Self::partition(ls_num, &pivot, 0);
+        
+        let tree=array_init(|i: usize|{Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()]))});
+        Self::Branch(tree, pivot)
     }
-    fn partition(ls_num:&mut [[f32;3]], i:usize) -> PartitionTree<&mut[[f32;3]]> {
+    fn get_pivot(ls_num:&[[f32;3]]) -> [f32;3] {
         let mut min: [f32;3]=[f32::MAX;3];
         let mut max: [f32;3]=[f32::MIN;3];
         for num in ls_num {
@@ -59,28 +65,30 @@ impl Octree {
                 max[idim] = max[idim].max(num[idim]);
             }
         }
-        let pivot: [f32;3] = [0.;3];
-        for idim in 0..3 {
-            pivot[idim]=(min[idim]+max[idim])/2.0;
-        }
-        Self::partition_n(ls_num, pivot, i)
+        [(min[0]+max[0])/2.0,(min[1]+max[1])/2.0,(min[2]+max[2])/2.0]
     }
-    fn partition_n(ls_num:&mut [[f32;3]], pivot: [f32;3], i:usize) -> PartitionTree<&mut[[f32;3]]>{
+    fn partition<'a>(ls_num:&'a mut [[f32;3]], pivot: &[f32;3], axis:usize) -> LinkedList<std::ops::Range<usize>> {
+        let ls = Self::partition_n(ls_num,pivot,axis);
+        let mut res = LinkedList::new();
+        if axis<=2 {
+            res.append(&mut Self::partition(&mut ls_num[ls.0], pivot, axis+1));
+            res.append(&mut Self::partition(&mut ls_num[ls.1], pivot, axis+1));
+        }
+        else {
+            res.push_back(ls.0);
+            res.push_back(ls.1);
+        }
+        res
+    }
+    fn partition_n<'a>(ls_num:&'a mut [[f32;3]], pivot: &[f32;3], axis: usize) -> (std::ops::Range<usize>,std::ops::Range<usize>) {
         let mut first = 0;
-        let mut val = ls_num.iter_mut();
-        val.next();
-        while let Some(val) = val.next() {
-            if val[i]<pivot[i] {
-                std::mem::swap(val, &mut ls_num[first]);
+        for i in 1..ls_num.len() {
+            if ls_num[i][axis]<pivot[axis] {
+                ls_num.swap(first, i);
                 first+=1;
             }
         }
-        let v=(&mut ls_num[0..first], &mut ls_num[first+1..0]);
-        if i!=3-1 {
-            PartitionTree::Partition(Box::new(Self::partition_n(v.0, pivot,i+1)), Box::new(Self::partition_n(v.1, pivot,i+1)))
-        }
-        else {
-            PartitionTree::Value(v.0,v.1)
-        }
+        (0..first, first..ls_num.len())
     }
+    
 }
