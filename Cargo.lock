@@ -367,5 +367,6 @@ version = "0.1.0"
 dependencies = [
  "array-init",
  "image",
+ "num-traits",
  "progress",
 ]
