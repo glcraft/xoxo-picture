@@ -12,12 +12,6 @@
 use std::collections::LinkedList;
 use array_init::array_init;
 
-pub trait TreeItem<T> {
-    fn get_item(&self, id: usize) -> &T;
-}
-
-
-
 const fn pow_2(i: usize) -> usize{
     if i>1 {
         2*pow_2(i-1)
@@ -28,23 +22,13 @@ const fn pow_2(i: usize) -> usize{
     }
 }
 
-impl<T> TreeItem<T> for &[T;3] {
-    fn get_item(&self, id: usize) -> &T
-    {
-        &self[id]
-    }
-}
-enum PartitionTree<T> {
-    Partition(Box<PartitionTree<T>>, Box<PartitionTree<T>>),
-    Value(T, T)
-}
 pub enum Octree {
     Branch([Box<Octree>;pow_2(3)], [f32;3]),
     Leaf([f32;3]),
     Empty
 }
 impl Octree {
-    fn generate(ls_num:&mut [[f32;3]]) -> Octree {
+    pub fn generate(ls_num:&mut [[f32;3]]) -> Octree {
         match ls_num.len() {
             0 => Octree::Empty,
             1 => Octree::Leaf(ls_num[0]),
