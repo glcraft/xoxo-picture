@@ -11,7 +11,7 @@
 // make_tree!(Quadtree, 2);
 use std::collections::LinkedList;
 use array_init::array_init;
-use std::ops::{Add, Div};
+use std::ops::{Add, Div, Index};
 
 pub trait MinMax {
     fn min(&self, other: Self) -> Self;
@@ -33,22 +33,23 @@ const fn pow_2(i: usize) -> usize{
 
 
 pub enum Octree<T> {
-    Branch([Box<Octree<T>>;pow_2(3)], [T;3]),
-    Leaf([T;3]),
+    Branch([Box<Octree<T>>;pow_2(3)], T),
+    Leaf(T),
     Empty
 }
-impl<T> Octree<T> 
+impl<T, U> Octree<T> 
 where
-    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32> + MinMax
+    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32> + MinMax + Index<usize, Output=U>,
+    U: PartialOrd
 {
-    pub fn generate(ls_num:&mut [[T;3]]) -> Octree<T> {
+    pub fn generate(ls_num:&mut [T]) -> Octree<T> {
         match ls_num.len() {
             0 => Octree::Empty,
             1 => Octree::Leaf(ls_num[0]),
             _ => Self::dispatch(ls_num)
         }
     }
-    fn insert(&mut self, value: [T;3]) // à terminer
+    fn insert(&mut self, value: T) // à terminer
     {
         match self {
             Octree::Branch(oct, pivot) => {
@@ -66,12 +67,13 @@ where
 }
 
 
-impl<T> Octree<T> 
+impl<T, U> Octree<T> 
 where
-    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32> + MinMax
+    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32> + MinMax + Index<usize, Output=U>,
+    U: PartialOrd
 {
     
-    fn dispatch(ls_num:&mut [[T;3]]) -> Octree<T> {
+    fn dispatch(ls_num:&mut [T]) -> Octree<T> {
         
         let pivot = Self::get_pivot(ls_num);
         let mut parts = Self::partition(ls_num, &pivot, 0);
@@ -79,19 +81,17 @@ where
         let tree=array_init(|_: usize|{Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()]))});
         Self::Branch(tree, pivot)
     }
-    fn get_pivot(ls_num:&[[T;3]]) -> [T;3] {
-        let mut min: [T;3]=[T::low();3];
-        let mut max: [T;3]=[T::high();3];
+    fn get_pivot(ls_num:&[T]) -> T {
+        let mut min: T=T::low();
+        let mut max: T=T::high();
         for num in ls_num.into_iter() {
-            for idim in 0..3 {
-                min[idim] = min[idim].min(num[idim]);
-                max[idim] = max[idim].max(num[idim]);
-            }
+            min = min.min(*num);
+            max = max.max(*num);
         }
         let two: T = T::from(2);
-        [(min[0]+max[0])/two,(min[1]+max[1])/two,(min[2]+max[2])/two]
+        min+max/two
     }
-    fn partition<'a>(ls_num:&'a mut [[T;3]], pivot: &[T;3], axis:usize) -> LinkedList<std::ops::Range<usize>> {
+    fn partition<'a>(ls_num:&'a mut [T], pivot: &T, axis:usize) -> LinkedList<std::ops::Range<usize>> {
         let ls = Self::partition_n(ls_num,pivot,axis);
         let mut res = LinkedList::new();
         if axis<=3-1 {
@@ -104,7 +104,7 @@ where
         }
         res
     }
-    fn partition_n<'a>(ls_num:&'a mut [[T;3]], pivot: &[T;3], axis: usize) -> (std::ops::Range<usize>,std::ops::Range<usize>) {
+    fn partition_n<'a>(ls_num:&'a mut [T], pivot: &T, axis: usize) -> (std::ops::Range<usize>,std::ops::Range<usize>) {
         let mut first = 0;
         for i in 1..ls_num.len() {
             if ls_num[i][axis]<pivot[axis] {
