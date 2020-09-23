@@ -48,6 +48,22 @@ where
             _ => Self::dispatch(ls_num)
         }
     }
+    fn insert(&mut self, value: [T;3]) // à terminer
+    {
+        match self {
+            Octree::Branch(oct, pivot) => {
+
+            },
+            Octree::Leaf(other)=> {
+                let mut t = [value, *other];
+                *self = Self::dispatch(&mut t);
+            }
+            Octree::Empty => {
+                *self = Octree::Leaf(value);
+            }
+        }
+    }
+}
 
 
 impl<T> Octree<T> 
