@@ -12,7 +12,14 @@
 use std::collections::LinkedList;
 use array_init::array_init;
 use std::ops::{Add, Div};
-use num_traits::cast::AsPrimitive;
+
+pub trait MinMax {
+    fn min(&self, other: Self) -> Self;
+    fn max(&self, other: Self) -> Self;
+    fn low() -> Self;
+    fn high() -> Self;
+}
+
 
 const fn pow_2(i: usize) -> usize{
     if i>1 {
@@ -32,7 +39,7 @@ pub enum Octree<T> {
 }
 impl<T> Octree<T> 
 where
-    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32>
+    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32> + MinMax
 {
     pub fn generate(ls_num:&mut [[T;3]]) -> Octree<T> {
         match ls_num.len() {
@@ -46,12 +53,12 @@ where
         let pivot = Self::get_pivot(ls_num);
         let mut parts = Self::partition(ls_num, &pivot, 0);
         
-        let tree=array_init(|i: usize|{Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()]))});
+        let tree=array_init(|_: usize|{Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()]))});
         Self::Branch(tree, pivot)
     }
     fn get_pivot(ls_num:&[[T;3]]) -> [T;3] {
-        let mut min: [T;3]=[T::MAX;3];
-        let mut max: [T;3]=[T::MIN;3];
+        let mut min: [T;3]=[T::low();3];
+        let mut max: [T;3]=[T::high();3];
         for num in ls_num.into_iter() {
             for idim in 0..3 {
                 min[idim] = min[idim].min(num[idim]);
@@ -64,7 +71,7 @@ where
     fn partition<'a>(ls_num:&'a mut [[T;3]], pivot: &[T;3], axis:usize) -> LinkedList<std::ops::Range<usize>> {
         let ls = Self::partition_n(ls_num,pivot,axis);
         let mut res = LinkedList::new();
-        if axis<=2 {
+        if axis<=3-1 {
             res.append(&mut Self::partition(&mut ls_num[ls.0], pivot, axis+1));
             res.append(&mut Self::partition(&mut ls_num[ls.1], pivot, axis+1));
         }
