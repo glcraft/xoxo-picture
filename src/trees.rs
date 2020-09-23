@@ -48,6 +48,13 @@ where
             _ => Self::dispatch(ls_num)
         }
     }
+
+
+impl<T> Octree<T> 
+where
+    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32> + MinMax
+{
+    
     fn dispatch(ls_num:&mut [[T;3]]) -> Octree<T> {
         
         let pivot = Self::get_pivot(ls_num);
