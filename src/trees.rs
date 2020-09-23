@@ -32,7 +32,7 @@ pub enum Octree<T> {
 }
 impl<T> Octree<T> 
 where
-    T: Add + Div + Copy
+    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32>
 {
     pub fn generate(ls_num:&mut [[T;3]]) -> Octree<T> {
         match ls_num.len() {
@@ -58,8 +58,8 @@ where
                 max[idim] = max[idim].max(num[idim]);
             }
         }
-        let two: T = 2u8.as_();
-        [(min[0]+max[0])/2.0,(min[1]+max[1])/two,(min[2]+max[2])/2.0]
+        let two: T = T::from(2);
+        [(min[0]+max[0])/two,(min[1]+max[1])/two,(min[2]+max[2])/two]
     }
     fn partition<'a>(ls_num:&'a mut [[T;3]], pivot: &[T;3], axis:usize) -> LinkedList<std::ops::Range<usize>> {
         let ls = Self::partition_n(ls_num,pivot,axis);
