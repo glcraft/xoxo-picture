@@ -14,10 +14,11 @@ use array_init::array_init;
 use std::ops::{Add, Div, Index};
 
 pub trait MinMax {
-    fn min(&self, other: Self) -> Self;
-    fn max(&self, other: Self) -> Self;
+    fn min_per_value(&self, other: &Self) -> Self;
+    fn max_per_value(&self, other: &Self) -> Self;
     fn low() -> Self;
     fn high() -> Self;
+    fn average(self, other: Self) -> Self;
 }
 
 
@@ -39,13 +40,13 @@ pub enum Octree<T> {
 }
 impl<T, U> Octree<T> 
 where
-    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32> + MinMax + Index<usize, Output=U>,
+    T: Ord + Clone + From<u32> + MinMax + Index<usize, Output=U>,
     U: PartialOrd
 {
     pub fn generate(ls_num:&mut [T]) -> Octree<T> {
         match ls_num.len() {
             0 => Octree::Empty,
-            1 => Octree::Leaf(ls_num[0]),
+            1 => Octree::Leaf(ls_num[0].clone()),
             _ => Self::dispatch(ls_num)
         }
     }
@@ -56,7 +57,7 @@ where
 
             },
             Octree::Leaf(other)=> {
-                let mut t = [value, *other];
+                let mut t = [value, other.clone()];
                 *self = Self::dispatch(&mut t);
             }
             Octree::Empty => {
@@ -69,7 +70,7 @@ where
 
 impl<T, U> Octree<T> 
 where
-    T: Add<Output=T> + Div<Output=T> + Ord + Copy + From<u32> + MinMax + Index<usize, Output=U>,
+    T: Ord + Clone + From<u32> + MinMax + Index<usize, Output=U>,
     U: PartialOrd
 {
     
@@ -85,11 +86,10 @@ where
         let mut min: T=T::low();
         let mut max: T=T::high();
         for num in ls_num.into_iter() {
-            min = min.min(*num);
-            max = max.max(*num);
+            min = min.min_per_value(num);
+            max = max.max_per_value(num);
         }
-        let two: T = T::from(2);
-        min+max/two
+        min.average(max)
     }
     fn partition<'a>(ls_num:&'a mut [T], pivot: &T, axis:usize) -> LinkedList<std::ops::Range<usize>> {
         let ls = Self::partition_n(ls_num,pivot,axis);
