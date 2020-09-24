@@ -2,12 +2,12 @@ use std::ops::{Index, IndexMut, Add, Div};
 use crate::trees;
 
 #[derive(Eq)]
-struct ColorItem {
-    color: [u8; 3],
-    file: String
+pub struct ColorItem {
+    pub color: [u8; 3],
+    pub file: String
 }
 impl ColorItem {
-    fn new(color: [u8; 3], file: String) -> Self {
+    pub fn new(color: [u8; 3], file: String) -> Self {
         ColorItem{color, file}
     }
 }
