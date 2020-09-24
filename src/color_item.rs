@@ -1,4 +1,4 @@
-use std::ops::{Index, IndexMut, Add, Div};
+use std::ops::{Index, IndexMut};
 use crate::trees;
 
 #[derive(Eq)]

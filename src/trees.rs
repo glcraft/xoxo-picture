@@ -11,7 +11,7 @@
 // make_tree!(Quadtree, 2);
 use std::collections::LinkedList;
 use array_init::array_init;
-use std::ops::{Add, Div, Index};
+use std::ops::Index;
 
 pub trait MinMax {
     fn min_per_value(&self, other: &Self) -> Self;
@@ -53,7 +53,7 @@ where
     fn insert(&mut self, value: T) // à terminer
     {
         match self {
-            Octree::Branch(oct, pivot) => {
+            Octree::Branch(_oct, _pivot) => {
 
             },
             Octree::Leaf(other)=> {
