@@ -2,9 +2,11 @@ pub mod color_item;
 pub mod trees;
 
 use image;
-use image::GenericImageView;
+use image::{GenericImage, GenericImageView};
+use rand::{thread_rng, Rng};
 
 use std::fs;
+use std::collections::HashMap;
 
 use color_item::ColorItem;
 use trees::Octree;
@@ -28,7 +30,7 @@ fn get_img_color(path_pict: &str) -> [u8;3] {
 
 fn create_base(path_assets: &str) -> Octree<ColorItem> {
     let mut bar = progress::Bar::new();
-    bar.set_job_title("Reading bar...");
+    bar.set_job_title("Reading pictures...");
     let t = fs::read_dir(path_assets).unwrap();
     let count = fs::read_dir(path_assets).unwrap().count();
     let mut ls_color_file: Vec<ColorItem> = Vec::new();
@@ -42,11 +44,32 @@ fn create_base(path_assets: &str) -> Octree<ColorItem> {
     }
     bar.reach_percent(100);
     bar.jobs_done();
-    println!("Creating trees...");
+    println!("Generating trees...");
     Octree::generate(&mut ls_color_file[..])
 }
 fn main() {
-    println!("Hello, world!");
-    let oct = create_base("deps/twemoji/assets/72x72");
-
+    println!("xoxo picture!");
+    const ASSETS_PATH: &str = "deps/twemoji/assets/72x72";
+    let oct = create_base(ASSETS_PATH);
+    let img = image::open("img_test.jpg").unwrap();
+    let img = img.resize(img.width()/16, img.height()/16, image::imageops::FilterType::Gaussian);
+    img.save("image_test_small.jpg");
+    let mut img_new = image::RgbImage::new(img.width()*16, img.height()*16);
+    let mut hs_emojies: HashMap<String, image::RgbImage> = HashMap::new();
+    let str_null = String::new();
+    let mut rng = thread_rng();
+    for (x,y,pxl) in img.to_rgba().enumerate_pixels() {
+        let idmoji = oct.get(&ColorItem::new_one([pxl[0],pxl[1],pxl[2]], str_null.clone()));
+        if let Octree::Leaf(ls_moji) = idmoji {
+            let emoji = &ls_moji[rng.gen_range(0,ls_moji.len())];
+            if let Some(imoji) = hs_emojies.get(&emoji.files) {
+                img_new.copy_from(imoji, x*16,y*16).expect("Image copy impossible");
+            } else {
+                let imoji = image::open(format!("{}/{}.png", ASSETS_PATH, emoji.files)).unwrap();
+                let imoji = imoji.resize(16, 16, image::imageops::Gaussian).to_rgb();
+                hs_emojies.insert(emoji.files.clone(), imoji);
+            }
+        }
+    }
+    img_new.save("img_test_result.png").expect("Unable to save picture");
 }

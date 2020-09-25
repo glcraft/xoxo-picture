@@ -10,14 +10,11 @@ pub enum FileStructure {
 
 pub struct ColorItem {
     pub color: [u8; 3],
-    pub files: FileStructure
+    pub files: String
 }
 impl ColorItem {
     pub fn new_one(color: [u8; 3], file: String) -> Self {
-        ColorItem{color, files: FileStructure::One(file)}
-    }
-    pub fn new_many(color: [u8; 3], files: Vec<String>) -> Self {
-        ColorItem{color, files: FileStructure::Many(files)}
+        ColorItem{color, files: file}
     }
 }
 impl Eq for ColorItem {}
@@ -93,14 +90,14 @@ impl trees::MinMax for ColorItem {
     fn low() -> Self {
         ColorItem {
             color: [u8::MIN; 3],
-            files: FileStructure::None
+            files: String::new()
         }
     }
     #[inline]
     fn high() -> Self {
         ColorItem {
             color: [u8::MAX; 3],
-            files: FileStructure::None
+            files: String::new()
         }
     }
     #[inline]
@@ -111,7 +108,7 @@ impl trees::MinMax for ColorItem {
                 (self.color[1] as u16+other.color[1] as u16 / 2) as u8,
                 (self.color[2] as u16+other.color[2] as u16 / 2) as u8
             ],
-            files: FileStructure::None
+            files: String::new()
         }
     }
 }

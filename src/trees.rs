@@ -67,6 +67,18 @@ where
             }
         }
     }
+    pub fn get(&self, search: &T) -> &Octree<T> {
+        match self {
+            Octree::Branch(oct, pivot) => {
+                let mut id=0;
+                for i in 0..3 {
+                    id |= ((search[i]<pivot[i]) as usize) << 1;
+                }
+                oct[id].get(search)
+            },
+            Octree::Leaf(_) | Octree::Empty=> self
+        }
+    }
 }
 
 
