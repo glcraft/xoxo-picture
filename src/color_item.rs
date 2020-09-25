@@ -1,16 +1,26 @@
 use std::ops::{Index, IndexMut};
 use crate::trees;
 
-#[derive(Eq)]
+#[derive(Clone)]
+pub enum FileStructure {
+    None,
+    One(String),
+    Many(Vec<String>)
+}
+
 pub struct ColorItem {
     pub color: [u8; 3],
-    pub file: String
+    pub files: FileStructure
 }
 impl ColorItem {
-    pub fn new(color: [u8; 3], file: String) -> Self {
-        ColorItem{color, file}
+    pub fn new_one(color: [u8; 3], file: String) -> Self {
+        ColorItem{color, files: FileStructure::One(file)}
+    }
+    pub fn new_many(color: [u8; 3], files: Vec<String>) -> Self {
+        ColorItem{color, files: FileStructure::Many(files)}
     }
 }
+impl Eq for ColorItem {}
 impl Ord for ColorItem {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         if self.color[0]<other.color[0] {
@@ -56,6 +66,14 @@ impl IndexMut<usize> for ColorItem {
         &mut self.color[idx]
     }
 }
+impl Clone for ColorItem {
+    fn clone(&self) -> Self {
+        ColorItem {
+            color: self.color.clone(),
+            files: self.files.clone()
+        } 
+    }
+}
 impl trees::MinMax for ColorItem {
     fn min_per_value(&self, other: &Self) -> Self {
         let mut result = Self::high();
@@ -75,16 +93,17 @@ impl trees::MinMax for ColorItem {
     fn low() -> Self {
         ColorItem {
             color: [u8::MIN; 3],
-            file: String::new()
+            files: FileStructure::None
         }
     }
     #[inline]
     fn high() -> Self {
         ColorItem {
             color: [u8::MAX; 3],
-            file: String::new()
+            files: FileStructure::None
         }
     }
+    #[inline]
     fn average(self, other: Self) -> Self {
         ColorItem {
             color: [
@@ -92,7 +111,7 @@ impl trees::MinMax for ColorItem {
                 (self.color[1] as u16+other.color[1] as u16 / 2) as u8,
                 (self.color[2] as u16+other.color[2] as u16 / 2) as u8
             ],
-            file: String::new()
+            files: FileStructure::None
         }
     }
 }

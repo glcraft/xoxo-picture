@@ -7,6 +7,7 @@ use image::GenericImageView;
 use std::fs;
 
 use color_item::ColorItem;
+use trees::Octree;
 
 fn get_img_color(path_pict: &str) -> [u8;3] {
     let mut total: [u64;3] = [0;3];
@@ -25,9 +26,9 @@ fn get_img_color(path_pict: &str) -> [u8;3] {
     ]
 }
 
-fn create_base(path_assets: &str) {
+fn create_base(path_assets: &str) -> Octree<ColorItem> {
     let mut bar = progress::Bar::new();
-    bar.set_job_title("Creating base...");
+    bar.set_job_title("Reading bar...");
     let t = fs::read_dir(path_assets).unwrap();
     let count = fs::read_dir(path_assets).unwrap().count();
     let mut ls_color_file: Vec<ColorItem> = Vec::new();
@@ -36,12 +37,16 @@ fn create_base(path_assets: &str) {
         let filestem = filepath.file_stem();
         let file_str = filepath.to_str().unwrap();
         let file_stem_str = filestem.unwrap().to_str().unwrap();
-        ls_color_file.push(ColorItem::new(get_img_color(file_str), String::from(file_stem_str)));
+        ls_color_file.push(ColorItem::new_one(get_img_color(file_str), String::from(file_stem_str)));
         bar.reach_percent((i * 100 / count) as i32);
     }
     bar.reach_percent(100);
+    bar.jobs_done();
+    println!("Creating trees...");
+    Octree::generate(&mut ls_color_file[..])
 }
 fn main() {
     println!("Hello, world!");
-    create_base("deps/twemoji/assets/72x72");
+    let oct = create_base("deps/twemoji/assets/72x72");
+
 }

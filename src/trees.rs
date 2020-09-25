@@ -10,7 +10,7 @@
 // make_tree!(Octree<T>, 3);
 // make_tree!(Quadtree, 2);
 use std::collections::LinkedList;
-use array_init::array_init;
+use std::ops::DerefMut;
 use std::ops::Index;
 
 pub trait MinMax {
@@ -35,18 +35,18 @@ const fn pow_2(i: usize) -> usize{
 
 pub enum Octree<T> {
     Branch([Box<Octree<T>>;pow_2(3)], T),
-    Leaf(T),
+    Leaf(Vec<T>),
     Empty
 }
 impl<T, U> Octree<T> 
 where
-    T: Ord + Clone + From<u32> + MinMax + Index<usize, Output=U>,
+    T: Ord + Clone + MinMax + Index<usize, Output=U>,
     U: PartialOrd
 {
     pub fn generate(ls_num:&mut [T]) -> Octree<T> {
         match ls_num.len() {
             0 => Octree::Empty,
-            1 => Octree::Leaf(ls_num[0].clone()),
+            1 => Octree::Leaf(vec!(ls_num[0].clone())),
             _ => Self::dispatch(ls_num)
         }
     }
@@ -57,11 +57,13 @@ where
 
             },
             Octree::Leaf(other)=> {
-                let mut t = [value, other.clone()];
-                *self = Self::dispatch(&mut t);
+                let mut new_values:Vec<T> = vec![value];
+                new_values.append(other);
+                
+                *self = Self::dispatch(&mut new_values);
             }
             Octree::Empty => {
-                *self = Octree::Leaf(value);
+                *self = Octree::Leaf(vec![value]);
             }
         }
     }
@@ -70,17 +72,40 @@ where
 
 impl<T, U> Octree<T> 
 where
-    T: Ord + Clone + From<u32> + MinMax + Index<usize, Output=U>,
+    T: Ord + Clone + MinMax + Index<usize, Output=U>,
     U: PartialOrd
 {
     
     fn dispatch(ls_num:&mut [T]) -> Octree<T> {
-        
-        let pivot = Self::get_pivot(ls_num);
-        let mut parts = Self::partition(ls_num, &pivot, 0);
-        
-        let tree=array_init(|_: usize|{Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()]))});
-        Self::Branch(tree, pivot)
+        if {
+            let first = ls_num[0].clone();
+            let mut ok = true;
+            for i in 1..ls_num.len() {
+                if ls_num[i] == first {
+                    ok=false; 
+                    break;
+                }
+            }
+            ok
+        } {
+            let pivot = Self::get_pivot(ls_num);
+            let mut parts = Self::partition(ls_num, &pivot, 0);
+            let tree = [
+                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()]))
+            ];
+            Self::Branch(tree, pivot)
+        }
+        else {
+            Self::Leaf(Vec::from(ls_num))
+        }
+
     }
     fn get_pivot(ls_num:&[T]) -> T {
         let mut min: T=T::low();
@@ -94,7 +119,7 @@ where
     fn partition<'a>(ls_num:&'a mut [T], pivot: &T, axis:usize) -> LinkedList<std::ops::Range<usize>> {
         let ls = Self::partition_n(ls_num,pivot,axis);
         let mut res = LinkedList::new();
-        if axis<=3-1 {
+        if axis<(3-1) {
             res.append(&mut Self::partition(&mut ls_num[ls.0], pivot, axis+1));
             res.append(&mut Self::partition(&mut ls_num[ls.1], pivot, axis+1));
         }
