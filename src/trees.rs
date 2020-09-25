@@ -18,7 +18,7 @@ pub trait MinMax {
     fn max_per_value(&self, other: &Self) -> Self;
     fn low() -> Self;
     fn high() -> Self;
-    fn average(self, other: Self) -> Self;
+    fn average(ls: &[Self]) -> Self where Self: Sized;
 }
 
 
@@ -44,6 +44,7 @@ where
     U: PartialOrd
 {
     pub fn generate(ls_num:&mut [T]) -> Octree<T> {
+        let mut _test = ls_num.len();
         match ls_num.len() {
             0 => Octree::Empty,
             1 => Octree::Leaf(vec!(ls_num[0].clone())),
@@ -90,27 +91,39 @@ where
     
     fn dispatch(ls_num:&mut [T]) -> Octree<T> {
         if {
-            let first = ls_num[0].clone();
-            let mut ok = true;
+            let first = &ls_num[0];
+            let mut ok = false;
             for i in 1..ls_num.len() {
-                if ls_num[i] == first {
-                    ok=false; 
+                if ls_num[i] != *first {
+                    ok=true; 
                     break;
                 }
             }
             ok
         } {
+            let _test = ls_num.len();
             let pivot = Self::get_pivot(ls_num);
-            let mut parts = Self::partition(ls_num, &pivot, 0);
+            let mut parts = Self::partition(ls_num, &pivot, 0, 0);
+            let uncompressed = [
+                parts.pop_front().unwrap(),
+                parts.pop_front().unwrap(),
+                parts.pop_front().unwrap(),
+                parts.pop_front().unwrap(),
+                parts.pop_front().unwrap(),
+                parts.pop_front().unwrap(),
+                parts.pop_front().unwrap(),
+                parts.pop_front().unwrap()
+            ];
+            let test = 0;
             let tree = [
-                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
-                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
-                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
-                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
-                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
-                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
-                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
-                Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()]))
+                Box::new(Self::generate(&mut ls_num[uncompressed[0].clone()])),
+                Box::new(Self::generate(&mut ls_num[uncompressed[1].clone()])),
+                Box::new(Self::generate(&mut ls_num[uncompressed[2].clone()])),
+                Box::new(Self::generate(&mut ls_num[uncompressed[3].clone()])),
+                Box::new(Self::generate(&mut ls_num[uncompressed[4].clone()])),
+                Box::new(Self::generate(&mut ls_num[uncompressed[5].clone()])),
+                Box::new(Self::generate(&mut ls_num[uncompressed[6].clone()])),
+                Box::new(Self::generate(&mut ls_num[uncompressed[7].clone()])),
             ];
             Self::Branch(tree, pivot)
         }
@@ -119,31 +132,42 @@ where
         }
 
     }
+    #[inline]
     fn get_pivot(ls_num:&[T]) -> T {
-        let mut min: T=T::low();
-        let mut max: T=T::high();
-        for num in ls_num.into_iter() {
-            min = min.min_per_value(num);
-            max = max.max_per_value(num);
-        }
-        min.average(max)
+        T::average(ls_num)
     }
-    fn partition<'a>(ls_num:&'a mut [T], pivot: &T, axis:usize) -> LinkedList<std::ops::Range<usize>> {
+    fn partition<'a>(ls_num:&'a mut [T], pivot: &T, axis:usize, offset: usize) -> LinkedList<std::ops::Range<usize>> {
         let ls = Self::partition_n(ls_num,pivot,axis);
         let mut res = LinkedList::new();
         if axis<(3-1) {
-            res.append(&mut Self::partition(&mut ls_num[ls.0], pivot, axis+1));
-            res.append(&mut Self::partition(&mut ls_num[ls.1], pivot, axis+1));
+            let start = (ls.0.start, ls.1.start);
+            res.append(&mut Self::partition(&mut ls_num[ls.0], pivot, axis+1, offset+start.0));
+            res.append(&mut Self::partition(&mut ls_num[ls.1], pivot, axis+1, offset+start.1));
         }
         else {
-            res.push_back(ls.0);
-            res.push_back(ls.1);
+            res.push_back(ls.0.start+offset..ls.0.end+offset);
+            res.push_back(ls.1.start+offset..ls.1.end+offset);
         }
         res
     }
     fn partition_n<'a>(ls_num:&'a mut [T], pivot: &T, axis: usize) -> (std::ops::Range<usize>,std::ops::Range<usize>) {
-        let mut first = 0;
-        for i in 1..ls_num.len() {
+        // https://en.cppreference.com/w/cpp/algorithm/partition
+        if ls_num.is_empty() {
+            return (0..0,0..0);
+        }
+        let mut first = ls_num.len();
+    
+        for i in 0..ls_num.len() {
+            if ls_num[i][axis]>=pivot[axis] {
+                first = i;
+                break;
+            }
+        }
+    
+        if first == ls_num.len() {
+            return (0..first,first..first);
+        }
+        for i in first+1..ls_num.len() {
             if ls_num[i][axis]<pivot[axis] {
                 ls_num.swap(first, i);
                 first+=1;

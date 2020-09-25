@@ -27,25 +27,65 @@ fn get_img_color(path_pict: &str) -> [u8;3] {
         (total[2] / (w*h) as u64) as u8
     ]
 }
+fn load_picture_base(result_base: &str) -> Vec<ColorItem> {
+    let mut result = Vec::<ColorItem>::new();
+    let lines = result_base.split("\n");
+    'a: for line in lines {
+        if line.len()==0 {
+            continue;
+        }
+        let values: Vec<_> = line.split(";").collect();
+        let str_color: Vec<_>  = values[0].split(",").collect();
+        let mut color: [u8;3] = [0;3];
+        for i in 0..3 {
+            if let Ok(res) = str_color[i].trim().parse() {
+                color[i] = res;
+            } else {
+                result.clear();
+                break 'a;
+            }
+        }
+        result.push(ColorItem::new_one(color, String::from(values[1])));
+    }
+    result
+}
+
+fn save_picture_base(ls_colors: &Vec<ColorItem>) -> String {
+    let mut result = String::new();
+    for color in ls_colors {
+        let formatted = format!("{},{},{};{}\n", color.color[0], color.color[1], color.color[2], color.files);
+        result.push_str(&formatted);
+    }
+    result
+}
 
 fn create_base(path_assets: &str) -> Octree<ColorItem> {
-    let mut bar = progress::Bar::new();
-    bar.set_job_title("Reading pictures...");
-    let t = fs::read_dir(path_assets).unwrap();
-    let count = fs::read_dir(path_assets).unwrap().count();
     let mut ls_color_file: Vec<ColorItem> = Vec::new();
-    for (i, file) in t.enumerate() {
-        let filepath = file.unwrap().path();
-        let filestem = filepath.file_stem();
-        let file_str = filepath.to_str().unwrap();
-        let file_stem_str = filestem.unwrap().to_str().unwrap();
-        ls_color_file.push(ColorItem::new_one(get_img_color(file_str), String::from(file_stem_str)));
-        bar.reach_percent((i * 100 / count) as i32);
+    if let Ok(result_base) = fs::read_to_string("base.txt") {
+        ls_color_file = load_picture_base(&result_base);
+    } 
+    if ls_color_file.len()==0 {
+        let mut bar = progress::Bar::new();
+        bar.set_job_title("Reading pictures...");
+        let t = fs::read_dir(path_assets).unwrap();
+        let count = fs::read_dir(path_assets).unwrap().count();
+        
+        for (i, file) in t.enumerate() {
+            let filepath = file.unwrap().path();
+            let filestem = filepath.file_stem();
+            let file_str = filepath.to_str().unwrap();
+            let file_stem_str = filestem.unwrap().to_str().unwrap();
+            ls_color_file.push(ColorItem::new_one(get_img_color(file_str), String::from(file_stem_str)));
+            bar.reach_percent((i * 100 / count) as i32);
+        }
+        bar.reach_percent(100);
+        bar.jobs_done();
+        println!("Saving pictures base...");
+        fs::write("base.txt", save_picture_base(&ls_color_file)) ;
     }
-    bar.reach_percent(100);
-    bar.jobs_done();
     println!("Generating trees...");
-    Octree::generate(&mut ls_color_file[..])
+    let mut _test = &mut ls_color_file[..];
+    Octree::generate(_test)
 }
 fn main() {
     println!("xoxo picture!");
