@@ -99,14 +99,16 @@ fn main() {
     let str_null = String::new();
     let mut rng = thread_rng();
     for (x,y,pxl) in img.to_rgba().enumerate_pixels() {
-        let idmoji = oct.get(&ColorItem::new_one([pxl[0],pxl[1],pxl[2]], str_null.clone()));
+        let idmoji = oct.get(&ColorItem::new_one([pxl[2],pxl[1],pxl[0]], str_null.clone()));
         if let Octree::Leaf(ls_moji) = idmoji {
             let emoji = &ls_moji[rng.gen_range(0,ls_moji.len())];
             if let Some(imoji) = hs_emojies.get(&emoji.files) {
                 img_new.copy_from(imoji, x*16,y*16).expect("Image copy impossible");
             } else {
-                let imoji = image::open(format!("{}/{}.png", ASSETS_PATH, emoji.files)).unwrap();
+                let path = format!("{}/{}.png", ASSETS_PATH, emoji.files);
+                let imoji = image::open(&path).expect(&format!("le chemin suivant est introuvable: {}", path));
                 let imoji = imoji.resize(16, 16, image::imageops::Gaussian).to_rgb();
+                img_new.copy_from(&imoji, x*16,y*16).expect("Image copy impossible");
                 hs_emojies.insert(emoji.files.clone(), imoji);
             }
         }

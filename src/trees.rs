@@ -73,9 +73,14 @@ where
             Octree::Branch(oct, pivot) => {
                 let mut id=0;
                 for i in 0..3 {
-                    id |= ((search[i]<pivot[i]) as usize) << 1;
+                    id |= ((search[i]>pivot[i]) as usize) << i;
                 }
-                oct[id].get(search)
+                let mut result = oct[id].get(search);
+                while let Octree::Empty = result{
+                    id+=1;
+                    result = oct[id%8].get(search);
+                }
+                result
             },
             Octree::Leaf(_) | Octree::Empty=> self
         }
@@ -158,7 +163,7 @@ where
         let mut first = ls_num.len();
     
         for i in 0..ls_num.len() {
-            if ls_num[i][axis]>=pivot[axis] {
+            if ls_num[i][axis]>pivot[axis] {
                 first = i;
                 break;
             }
@@ -168,7 +173,7 @@ where
             return (0..first,first..first);
         }
         for i in first+1..ls_num.len() {
-            if ls_num[i][axis]<pivot[axis] {
+            if ls_num[i][axis]<=pivot[axis] {
                 ls_num.swap(first, i);
                 first+=1;
             }
