@@ -4,6 +4,7 @@ pub mod trees;
 use image;
 use image::{GenericImage, GenericImageView};
 use rand::{thread_rng, Rng};
+use image::buffer::ConvertBuffer;
 
 use std::fs;
 use std::collections::HashMap;
@@ -59,6 +60,17 @@ fn save_picture_base(ls_colors: &Vec<ColorItem>) -> String {
     result
 }
 
+fn load_emoji(path: &String, size: (u32, u32)) -> image::RgbImage {
+    let imoji = image::open(&path).expect(&format!("le chemin suivant est introuvable: {}", path));
+    let mut imoji = imoji.resize(size.0, size.1, image::imageops::Gaussian).to_rgba();
+    for (x,y,pxl) in imoji.enumerate_pixels_mut() {
+        pxl[0] = (pxl[0] as u16 * pxl[3] as u16 / 255) as u8;
+        pxl[1] = (pxl[1] as u16 * pxl[3] as u16 / 255) as u8;
+        pxl[2] = (pxl[2] as u16 * pxl[3] as u16 / 255) as u8;
+    }
+    imoji.convert()
+}
+
 fn create_base(path_assets: &str) -> Octree<ColorItem> {
     let mut ls_color_file: Vec<ColorItem> = Vec::new();
     if let Ok(result_base) = fs::read_to_string("base.txt") {
@@ -106,8 +118,7 @@ fn main() {
                 img_new.copy_from(imoji, x*16,y*16).expect("Image copy impossible");
             } else {
                 let path = format!("{}/{}.png", ASSETS_PATH, emoji.files);
-                let imoji = image::open(&path).expect(&format!("le chemin suivant est introuvable: {}", path));
-                let imoji = imoji.resize(16, 16, image::imageops::Gaussian).to_rgb();
+                let imoji = load_emoji(&path, (16,16));
                 img_new.copy_from(&imoji, x*16,y*16).expect("Image copy impossible");
                 hs_emojies.insert(emoji.files.clone(), imoji);
             }
