@@ -1,5 +1,8 @@
 pub mod color_item;
 pub mod trees;
+pub mod args;
+
+use clap::Clap;
 
 use image;
 use image::{GenericImage, GenericImageView};
@@ -7,6 +10,7 @@ use rand::{thread_rng, Rng};
 use image::buffer::ConvertBuffer;
 
 use std::fs;
+use std::path::Path;
 use std::collections::HashMap;
 
 use color_item::ColorItem;
@@ -101,14 +105,12 @@ fn create_base(path_assets: &str) -> Octree<ColorItem> {
     Octree::generate(&mut ls_color_file[..])
 }
 fn main() {
-    let size = 2;
-    let upscale = 8;
-    let size_upscale = size*upscale;
-    const ASSETS_PATH: &str = "deps/twemoji/assets/72x72";
+    let args: args::Opts = args::Opts::parse();
+    let size_upscale = args.size*args.upscale;
     println!("xoxo picture!");
-    let oct = create_base(ASSETS_PATH);
-    let img = image::open("image_test.jpg").unwrap();
-    let img = img.resize(img.width()/size, img.height()/size, image::imageops::FilterType::Gaussian);
+    let oct = create_base(&args.assets_path);
+    let img = image::open(&args.filename).unwrap();
+    let img = img.resize(img.width()/args.size, img.height()/args.size, image::imageops::FilterType::Gaussian);
     // img.save("image_test_small.jpg");
     let mut img_new = image::RgbImage::new(img.width()*size_upscale, img.height()*size_upscale);
     let mut hs_emojies: HashMap<String, image::RgbImage> = HashMap::new();
@@ -119,14 +121,16 @@ fn main() {
         if let Octree::Leaf(ls_moji) = idmoji {
             let emoji = &ls_moji[rng.gen_range(0,ls_moji.len())];
             if let Some(imoji) = hs_emojies.get(&emoji.files) {
-                img_new.copy_from(imoji, x*size_upscale,y*size_upscale).expect("Image copy impossible");
+                img_new.copy_from(imoji, x*size_upscale,y*size_upscale).expect("Unable to copy emoji into the new picture");
             } else {
-                let path = format!("{}/{}", ASSETS_PATH, emoji.files);
+                let path = format!("{}/{}", args.assets_path, emoji.files);
                 let imoji = load_emoji(&path, (size_upscale,size_upscale));
-                img_new.copy_from(&imoji, x*size_upscale,y*size_upscale).expect("Image copy impossible");
+                img_new.copy_from(&imoji, x*size_upscale,y*size_upscale).expect("Unable to copy emoji into the new picture");
                 hs_emojies.insert(emoji.files.clone(), imoji);
             }
         }
     }
-    img_new.save("img_test_result.png").expect("Unable to save picture");
+    let new_path = Path::new(&args.filename);
+    let new_path = format!("{}/{}_result.{}",new_path.parent().unwrap().to_str().unwrap(),new_path.file_stem().unwrap().to_str().unwrap(),new_path.extension().unwrap().to_str().unwrap());
+    img_new.save(new_path).expect("Unable to save picture");
 }
