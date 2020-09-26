@@ -100,21 +100,9 @@ impl trees::MinMax for ColorItem {
             files: String::new()
         }
     }
-    // #[inline]
-    // fn average(self, other: Self) -> Self {
-    //     ColorItem {
-    //         color: [
-    //             ((self.color[0] as u16+other.color[0] as u16) / 2) as u8,
-    //             ((self.color[1] as u16+other.color[1] as u16) / 2) as u8,
-    //             ((self.color[2] as u16+other.color[2] as u16) / 2) as u8
-    //         ],
-    //         files: String::new()
-    //     }
-    // }
 
     fn average(ls: &[Self]) -> Self {
         let mut result: [u64;3]=[0;3];
-        let _test = ls.len();
         for c in ls {
             result[0]+=c.color[0] as u64;
             result[1]+=c.color[1] as u64;

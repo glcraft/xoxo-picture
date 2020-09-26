@@ -10,7 +10,6 @@
 // make_tree!(Octree<T>, 3);
 // make_tree!(Quadtree, 2);
 use std::collections::LinkedList;
-use std::ops::DerefMut;
 use std::ops::Index;
 
 pub trait MinMax {
@@ -44,7 +43,6 @@ where
     U: PartialOrd
 {
     pub fn generate(ls_num:&mut [T]) -> Octree<T> {
-        let mut _test = ls_num.len();
         match ls_num.len() {
             0 => Octree::Empty,
             1 => Octree::Leaf(vec!(ls_num[0].clone())),
@@ -106,9 +104,9 @@ where
             }
             ok
         } {
-            let _test = ls_num.len();
             let pivot = Self::get_pivot(ls_num);
             let mut parts = Self::partition(ls_num, &pivot, 0, 0);
+            if cfg!(debug_assertion) {
             let uncompressed = [
                 parts.pop_front().unwrap(),
                 parts.pop_front().unwrap(),
@@ -119,7 +117,6 @@ where
                 parts.pop_front().unwrap(),
                 parts.pop_front().unwrap()
             ];
-            let test = 0;
             let tree = [
                 Box::new(Self::generate(&mut ls_num[uncompressed[0].clone()])),
                 Box::new(Self::generate(&mut ls_num[uncompressed[1].clone()])),
@@ -131,6 +128,19 @@ where
                 Box::new(Self::generate(&mut ls_num[uncompressed[7].clone()])),
             ];
             Self::Branch(tree, pivot)
+            } else {
+                let tree = [
+                    Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                    Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                    Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                    Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                    Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                    Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                    Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                    Box::new(Self::generate(&mut ls_num[parts.pop_front().unwrap()])),
+                ];
+                Self::Branch(tree, pivot)
+            }
         }
         else {
             Self::Leaf(Vec::from(ls_num))

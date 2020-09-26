@@ -63,7 +63,7 @@ fn save_picture_base(ls_colors: &Vec<ColorItem>) -> String {
 fn load_emoji(path: &String, size: (u32, u32)) -> image::RgbImage {
     let imoji = image::open(&path).expect(&format!("le chemin suivant est introuvable: {}", path));
     let mut imoji = imoji.resize(size.0, size.1, image::imageops::Gaussian).to_rgba();
-    for (x,y,pxl) in imoji.enumerate_pixels_mut() {
+    for (_,_,pxl) in imoji.enumerate_pixels_mut() {
         pxl[0] = (pxl[0] as u16 * pxl[3] as u16 / 255) as u8;
         pxl[1] = (pxl[1] as u16 * pxl[3] as u16 / 255) as u8;
         pxl[2] = (pxl[2] as u16 * pxl[3] as u16 / 255) as u8;
@@ -84,29 +84,33 @@ fn create_base(path_assets: &str) -> Octree<ColorItem> {
         
         for (i, file) in t.enumerate() {
             let filepath = file.unwrap().path();
-            let filestem = filepath.file_stem();
+            let filename = filepath.file_name();
             let file_str = filepath.to_str().unwrap();
-            let file_stem_str = filestem.unwrap().to_str().unwrap();
-            ls_color_file.push(ColorItem::new_one(get_img_color(file_str), String::from(file_stem_str)));
+            let file_name_str = filename.unwrap().to_str().unwrap();
+            ls_color_file.push(ColorItem::new_one(get_img_color(file_str), String::from(file_name_str)));
             bar.reach_percent((i * 100 / count) as i32);
         }
         bar.reach_percent(100);
         bar.jobs_done();
         println!("Saving pictures base...");
-        fs::write("base.txt", save_picture_base(&ls_color_file)) ;
+        if let Err(err) = fs::write("base.txt", save_picture_base(&ls_color_file)) {
+            println!("Error writing base.txt (reason: {}), continue...", err);
+        }
     }
     println!("Generating trees...");
-    let mut _test = &mut ls_color_file[..];
-    Octree::generate(_test)
+    Octree::generate(&mut ls_color_file[..])
 }
 fn main() {
-    println!("xoxo picture!");
+    let size = 2;
+    let upscale = 8;
+    let size_upscale = size*upscale;
     const ASSETS_PATH: &str = "deps/twemoji/assets/72x72";
+    println!("xoxo picture!");
     let oct = create_base(ASSETS_PATH);
-    let img = image::open("img_test.jpg").unwrap();
-    let img = img.resize(img.width()/16, img.height()/16, image::imageops::FilterType::Gaussian);
-    img.save("image_test_small.jpg");
-    let mut img_new = image::RgbImage::new(img.width()*16, img.height()*16);
+    let img = image::open("image_test.jpg").unwrap();
+    let img = img.resize(img.width()/size, img.height()/size, image::imageops::FilterType::Gaussian);
+    // img.save("image_test_small.jpg");
+    let mut img_new = image::RgbImage::new(img.width()*size_upscale, img.height()*size_upscale);
     let mut hs_emojies: HashMap<String, image::RgbImage> = HashMap::new();
     let str_null = String::new();
     let mut rng = thread_rng();
@@ -115,11 +119,11 @@ fn main() {
         if let Octree::Leaf(ls_moji) = idmoji {
             let emoji = &ls_moji[rng.gen_range(0,ls_moji.len())];
             if let Some(imoji) = hs_emojies.get(&emoji.files) {
-                img_new.copy_from(imoji, x*16,y*16).expect("Image copy impossible");
+                img_new.copy_from(imoji, x*size_upscale,y*size_upscale).expect("Image copy impossible");
             } else {
-                let path = format!("{}/{}.png", ASSETS_PATH, emoji.files);
-                let imoji = load_emoji(&path, (16,16));
-                img_new.copy_from(&imoji, x*16,y*16).expect("Image copy impossible");
+                let path = format!("{}/{}", ASSETS_PATH, emoji.files);
+                let imoji = load_emoji(&path, (size_upscale,size_upscale));
+                img_new.copy_from(&imoji, x*size_upscale,y*size_upscale).expect("Image copy impossible");
                 hs_emojies.insert(emoji.files.clone(), imoji);
             }
         }
