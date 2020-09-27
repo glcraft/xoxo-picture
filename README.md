@@ -42,10 +42,14 @@ OPTIONS:
 
 }
 </style>
-<div class="center"><img class="img" src="readme/img_test.jpg"><img class="img" src="readme/img_test_result.jpg"></div>
+<div class="center"><img style="width:50%" src="readme/img_test.jpg"><img style="width:50%" src="readme/img_test_result.jpg"></div>
 
-<div class="center"><img class="img" src="readme/twitter.png"><img class="img" src="readme/twitter_result.png"></div>
+<div class="center"><img style="width:50%" src="readme/twitter.png"><img style="width:50%" src="readme/twitter_result.png"></div>
 
-<div class="center"><img class="img" src="readme/i1e2WWvx_400x400.jpg"><img class="img" src="readme/i1e2WWvx_400x400_result.jpg"></div>
+<div class="center"><img style="width:50%" src="readme/i1e2WWvx_400x400.jpg"><img style="width:50%" src="readme/i1e2WWvx_400x400_result.jpg"></div>
 
-<div class="center"><img class="img" src="readme/IMG_20200519_205446.jpg"><img class="img" src="readme/IMG_20200519_205446_result.jpg"></div>
+<div class="center"><img style="width:50%" src="readme/IMG_20200519_205446.jpg"><img style="width:50%" src="readme/IMG_20200519_205446_result.jpg"></div>
+
+## Notes
+
+Special thanks to Ino for the idea of the octree ;)
