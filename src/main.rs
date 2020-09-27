@@ -105,10 +105,16 @@ fn create_base(path_assets: &str) -> Octree<ColorItem> {
     Octree::generate(&mut ls_color_file[..])
 }
 fn main() {
-    let args: args::Opts = args::Opts::parse();
+    let mut args: args::Opts = args::Opts::parse();
+    if let None = args.assets_path {
+        let mut path_exe = std::env::current_exe().expect("Unable to get the executable path").parent().expect("Unable to get the parent of the executable path").to_path_buf();
+        path_exe.push(if cfg!(debug_assertion) {"deps/twemoji/assets/72x72"} else {"deps/twemoji"});
+        args.assets_path = Some(String::from(path_exe.to_str().unwrap()));
+    }
+    let assets_path = args.assets_path.unwrap();
     let size_upscale = args.size*args.upscale;
     println!("xoxo picture!");
-    let oct = create_base(&args.assets_path);
+    let oct = create_base(&assets_path);
     let img = image::open(&args.filename).unwrap();
     let img = img.resize(img.width()/args.size, img.height()/args.size, image::imageops::FilterType::Gaussian);
     // img.save("image_test_small.jpg");
@@ -123,7 +129,7 @@ fn main() {
             if let Some(imoji) = hs_emojies.get(&emoji.files) {
                 img_new.copy_from(imoji, x*size_upscale,y*size_upscale).expect("Unable to copy emoji into the new picture");
             } else {
-                let path = format!("{}/{}", args.assets_path, emoji.files);
+                let path = format!("{}/{}", assets_path, emoji.files);
                 let imoji = load_emoji(&path, (size_upscale,size_upscale));
                 img_new.copy_from(&imoji, x*size_upscale,y*size_upscale).expect("Unable to copy emoji into the new picture");
                 hs_emojies.insert(emoji.files.clone(), imoji);

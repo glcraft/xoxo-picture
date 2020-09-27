@@ -13,8 +13,8 @@ pub struct Opts {
     /// Emoji upscale
     #[clap(short = 'u', long = "upscale", default_value = "1")]
     pub upscale: u32,
-    /// Emojis assets path
-    #[clap(long = "assets", default_value = "deps/twemoji/assets/72x72")]
-    pub assets_path: String,
+    /// Emojis assets path [default: EXE_PATH/deps/twemoji]
+    #[clap(long = "assets")]
+    pub assets_path: Option<String>,
 
 }
