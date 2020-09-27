@@ -27,28 +27,7 @@ OPTIONS:
 
 ## Examples
 
-<style>
-.center {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    width: 1200px;
-    /* width:50%; */
-}
-.img {
-    width:50%;
-    border-radius: 40px;
-    text-align: center;
-
-}
-</style>
-<div class="center"><img style="width:50%" src="readme/img_test.jpg"><img style="width:50%" src="readme/img_test_result.jpg"></div>
-
-<div class="center"><img style="width:50%" src="readme/twitter.png"><img style="width:50%" src="readme/twitter_result.png"></div>
-
-<div class="center"><img style="width:50%" src="readme/i1e2WWvx_400x400.jpg"><img style="width:50%" src="readme/i1e2WWvx_400x400_result.jpg"></div>
-
-<div class="center"><img style="width:50%" src="readme/IMG_20200519_205446.jpg"><img style="width:50%" src="readme/IMG_20200519_205446_result.jpg"></div>
+You can see some examples in the "readme" folder.
 
 ## Notes
 
