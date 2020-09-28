@@ -83,7 +83,10 @@ fn create_base(path_assets: &str) -> Octree<ColorItem> {
     if ls_color_file.len()==0 {
         let mut bar = progress::Bar::new();
         bar.set_job_title("Reading pictures...");
-        let t = fs::read_dir(path_assets).unwrap();
+        let t = match fs::read_dir(path_assets) {
+            Err(_) => panic!("Assets path not found '{}'", path_assets),
+            Ok(dir_entry) => dir_entry
+        };
         let count = fs::read_dir(path_assets).unwrap().count();
         
         for (i, file) in t.enumerate() {
