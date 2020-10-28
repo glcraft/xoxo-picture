@@ -150,5 +150,5 @@ fn main() {
             String::from("")
         }
     },new_path.file_stem().unwrap().to_str().unwrap(),new_path.extension().unwrap().to_str().unwrap());
-    img_new.save(new_path).expect(&format!("Unable to save picture to {}", new_path));//format!("Unable to save picture to {}", new_path)
+    img_new.save(&new_path).expect(&format!("Unable to save picture to {}", &new_path));//format!("Unable to save picture to {}", new_path)
 }
