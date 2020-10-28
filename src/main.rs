@@ -75,15 +75,19 @@ fn load_emoji(path: &String, size: (u32, u32)) -> image::RgbImage {
     imoji.convert()
 }
 
-fn create_base(path_assets: &str) -> Octree<ColorItem> {
+fn create_base(path_assets: &str, path_dir_exe: std::path::PathBuf) -> Octree<ColorItem> {
     let mut ls_color_file: Vec<ColorItem> = Vec::new();
-    if let Ok(result_base) = fs::read_to_string("base.txt") {
+    let path_base = format!("{}/base.txt",path_dir_exe.to_str().unwrap());
+    if let Ok(result_base) = fs::read_to_string(&path_base) {
         ls_color_file = load_picture_base(&result_base);
     } 
     if ls_color_file.len()==0 {
         let mut bar = progress::Bar::new();
         bar.set_job_title("Reading pictures...");
-        let t = fs::read_dir(path_assets).unwrap();
+        let t = match fs::read_dir(path_assets) {
+            Err(_) => panic!("Assets path not found '{}'", path_assets),
+            Ok(dir_entry) => dir_entry
+        };
         let count = fs::read_dir(path_assets).unwrap().count();
         
         for (i, file) in t.enumerate() {
@@ -96,8 +100,8 @@ fn create_base(path_assets: &str) -> Octree<ColorItem> {
         }
         bar.reach_percent(100);
         bar.jobs_done();
-        println!("Saving pictures base...");
-        if let Err(err) = fs::write("base.txt", save_picture_base(&ls_color_file)) {
+        println!("Saving pictures base into {}...", path_base);
+        if let Err(err) = fs::write(path_base, save_picture_base(&ls_color_file)) {
             println!("Error writing base.txt (reason: {}), continue...", err);
         }
     }
@@ -106,15 +110,15 @@ fn create_base(path_assets: &str) -> Octree<ColorItem> {
 }
 fn main() {
     let mut args: args::Opts = args::Opts::parse();
+    let path_dir_exe = std::env::current_exe().expect("Unable to get the executable path").parent().expect("Unable to get the parent of the executable path").to_path_buf();
     if let None = args.assets_path {
-        let mut path_exe = std::env::current_exe().expect("Unable to get the executable path").parent().expect("Unable to get the parent of the executable path").to_path_buf();
-        path_exe.push(if cfg!(debug_assertion) {"deps/twemoji/assets/72x72"} else {"deps/twemoji"});
-        args.assets_path = Some(String::from(path_exe.to_str().unwrap()));
+        let path_assets = format!("{}/{}", path_dir_exe.to_str().unwrap(), if cfg!(debug_assertion) {"deps/twemoji/assets/72x72"} else {"deps/twemoji"});
+        args.assets_path = Some(path_assets);
     }
     let assets_path = args.assets_path.unwrap();
     let size_upscale = args.size*args.upscale;
     println!("xoxo picture!");
-    let oct = create_base(&assets_path);
+    let oct = create_base(&assets_path, path_dir_exe);
     let img = image::open(&args.filename).unwrap();
     let img = img.resize(img.width()/args.size, img.height()/args.size, image::imageops::FilterType::Gaussian);
     // img.save("image_test_small.jpg");
