@@ -137,6 +137,14 @@ fn main() {
         }
     }
     let new_path = Path::new(&args.filename);
-    let new_path = format!("{}/{}_result.{}",new_path.parent().unwrap().to_str().unwrap(),new_path.file_stem().unwrap().to_str().unwrap(),new_path.extension().unwrap().to_str().unwrap());
-    img_new.save(new_path).expect("Unable to save picture");
+    let parent_path = new_path.parent().unwrap();
+    let new_path = format!("{}{}_result.{}",{
+        let parent_str = parent_path.to_str().unwrap();
+        if parent_str.len()>0 {
+            format!("{}/", parent_str)
+        } else {
+            String::from("")
+        }
+    },new_path.file_stem().unwrap().to_str().unwrap(),new_path.extension().unwrap().to_str().unwrap());
+    img_new.save(new_path).expect(&format!("Unable to save picture to {}", new_path));//format!("Unable to save picture to {}", new_path)
 }
